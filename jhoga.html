@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JHOGA TIMER</title>
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Tone.js for audio notification -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- 3. Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Updated Fonts: Lora for headings, Nunito for body -->
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Nunito as the default font */
+        body {
+            font-family: 'Nunito', sans-serif;
+            /* Set a new cozy background image */
+            background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1961&auto=format&fit=crop');
+            background-color: #1c1917; /* Fallback color (warm dark) */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* Keeps the background still */
+        }
+        /* Custom font for headings */
+        .font-lora {
+            font-family: 'Lora', serif;
+        }
+        /* Custom transition for the timer text color */
+        #timer-display {
+            transition: color 0.5s ease;
+        }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center min-h-screen transition-all duration-500" id="body-bg">
+    
+    <!-- Updated card for a warmer feel and more blur -->
+    <main class="bg-stone-800 bg-opacity-80 backdrop-blur-lg rounded-2xl shadow-2xl p-6 sm:p-10 w-full max-w-md text-center relative">
+        
+        <!-- Button Container for top-right icons -->
+        <div class="absolute top-6 right-6 flex space-x-2">
+            <!-- New Music Toggle Button -->
+            <button id="music-toggle-btn" class="text-gray-400 hover:text-white transition-colors" title="Toggle music player">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 19.219A2.25 2.25 0 012.25 17.303v-3.75a2.25 2.25 0 011.07-1.916l7.5-4.615a2.25 2.25 0 012.36 0L19.5 7.543A2.25 2.25 0 0121 9.453v3.75a2.25 2.25 0 01-1.07 1.916L12 19.219m0 0a2.25 2.25 0 01-2.36 0L3.32 15.604a2.25 2.25 0 01-1.07-1.916V9.453a2.25 2.25 0 011.07-1.916l7.5-4.615a2.25 2.25 0 012.36 0L19.5 7.543A2.25 2.25 0 0121 9.453v0" />
+                </svg>
+            </button>
+            <!-- New Settings Button -->
+            <button id="settings-btn" class="text-gray-400 hover:text-white transition-colors" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-.921 1.03.16 1.903.92 2.303 1.838.399.919.35 1.96.118 2.844l-1.48 4.439M15 12l-1.48 4.439c-.232.884-.28 1.925-.118 2.844.399.919 1.273 1.678 2.303 1.838 1.03.16 1.903-.92 2.303-1.838.399-.919.35-1.96.118-2.844L15 12z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 7.756a4.5 4.5 0 1 0 0 8.488M10.5 12a4.5 4.5 0 1 1-8.488 0 4.5 4.5 0 0 1 8.488 0z" />
+                </svg>
+            </button>
+            <!-- Floating Timer Toggle Button -->
+            <button id="floating-timer-toggle" class="text-gray-400 hover:text-white transition-colors" title="Toggle floating timer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+            </button>
+        </div>
+        
+        <h1 class="text-3xl font-bold text-white mb-6 font-lora">JHOGA TIMER</h1>
+
+        <!-- Mode-switching tabs - updated color -->
+        <div class="bg-stone-700 rounded-full p-1.5 flex justify-between items-center mb-8">
+            <button id="pomodoro-btn" class="tab-btn px-4 sm:px-6 py-2 rounded-full font-medium w-1/3 transition-all" data-mode="pomodoro">Pomodoro</button>
+            <button id="short-btn" class="tab-btn px-4 sm:px-6 py-2 rounded-full font-medium w-1/3 transition-all" data-mode="short">Short Break</button>
+            <button id="long-btn" class="tab-btn px-4 sm:px-6 py-2 rounded-full font-medium w-1/3 transition-all" data-mode="long">Long Break</button>
+        </div>
+
+        <!-- Timer Display - updated font -->
+        <div class="my-10">
+            <h2 id="timer-display" class="text-8xl sm:text-9xl font-extrabold text-white transition-all duration-500 font-lora">25:00</h2>
+        </div>
+
+        <!-- Start/Pause Button - Updated to be theme-aware -->
+        <button id="start-pause-btn" class="w-full max-w-xs mx-auto bg-white text-white font-bold py-4 px-12 rounded-full text-2xl uppercase tracking-wider shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95">
+            Start
+        </button>
+
+        <!-- Session Dots -->
+        <div id="session-dots" class="flex justify-center space-x-2.5 mt-8">
+            <!-- Dots generated by JS -->
+        </div>
+
+        <!-- Reset Button -->
+        <button id="reset-btn" class="text-gray-400 hover:text-white mt-6 inline-block transition-colors">
+            Reset Timer
+        </button>
+        
+    </main>
+
+    <!-- Movable Spotify Player - updated colors -->
+    <div id="spotify-widget" class="fixed top-5 right-5 w-80 rounded-2xl shadow-xl overflow-hidden z-50 bg-stone-900 bg-opacity-90 backdrop-blur-md">
+        <!-- Updated drag handle (removed close button) -->
+        <div id="spotify-drag-handle" class="text-center bg-stone-700 bg-opacity-80 text-white text-sm font-semibold p-2 cursor-move">
+            <span class="pl-2">Drag Music Player</span>
+        </div>
+        <!-- Spotify compact player with a dark theme -->
+        <iframe style="border-radius: 0 0 12px 12px;" src="https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    </div>
+
+    <!-- New Floating Timer Window (hidden by default) - updated colors -->
+    <div id="floating-timer-widget" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 rounded-2xl shadow-xl overflow-hidden z-50 bg-stone-900 bg-opacity-80 backdrop-blur-md hidden">
+        <div id="timer-drag-handle" class="bg-stone-700 bg-opacity-80 text-white text-sm font-semibold p-2 text-center cursor-move">
+            Drag Timer
+        </div>
+        <div id="floating-timer-display" class="text-white text-6xl font-extrabold p-6 text-center font-lora">
+            25:00
+        </div>
+    </div>
+
+
+    <!-- New Settings Modal (hidden by default) - updated colors -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <!-- Backdrop -->
+        <div id="settings-backdrop" class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative bg-stone-800 rounded-2xl shadow-xl w-full max-w-sm p-6 text-white border border-stone-700">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold font-lora">Settings</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Settings Form -->
+            <div class="space-y-4">
+                <div>
+                    <label for="pomodoro-input" class="block text-sm font-medium text-gray-300 mb-1">Pomodoro (minutes)</label>
+                    <input type="number" id="pomodoro-input" min="1" class="w-full bg-stone-700 text-white rounded-lg border border-stone-600 p-2.5 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div>
+                    <label for="short-input" class="block text-sm font-medium text-gray-300 mb-1">Short Break (minutes)</label>
+                    <input type="number" id="short-input" min="1" class="w-full bg-stone-700 text-white rounded-lg border border-stone-600 p-2.5 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div>
+                    <label for="long-input" class="block text-sm font-medium text-gray-300 mb-1">Long Break (minutes)</label>
+                    <input type="number" id="long-input" min="1" class="w-full bg-stone-700 text-white rounded-lg border border-stone-600 p-2.5 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="mt-8 text-right">
+                <button id="save-settings-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const timerDisplay = document.getElementById('timer-display');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const sessionDotsContainer = document.getElementById('session-dots');
+            const bodyBg = document.getElementById('body-bg');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            
+            // --- Floating Timer Elements ---
+            const floatingTimerToggleBtn = document.getElementById('floating-timer-toggle');
+            const floatingTimerWidget = document.getElementById('floating-timer-widget');
+            const floatingTimerDisplay = document.getElementById('floating-timer-display');
+            const timerDragHandle = document.getElementById('timer-drag-handle');
+
+            // --- Spotify Widget Elements (for dragging) ---
+            const spotifyWidget = document.getElementById('spotify-widget');
+            const dragHandle = document.getElementById('spotify-drag-handle');
+            const musicToggleBtn = document.getElementById('music-toggle-btn'); // <-- New Music Toggle
+            // const closeSpotifyBtn = document.getElementById('close-spotify-btn'); // <-- Removed
+
+            // --- New Settings Modal Elements ---
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsBackdrop = document.getElementById('settings-backdrop');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const saveSettingsBtn = document.getElementById('save-settings-btn');
+            const pomodoroInput = document.getElementById('pomodoro-input');
+            const shortInput = document.getElementById('short-input');
+            const longInput = document.getElementById('long-input');
+
+            // --- Timer Settings ---
+            let settings = { // Changed to 'let' so it can be updated
+                pomodoro: 25 * 60,   // 25 minutes
+                short: 5 * 60,     // 5 minutes
+                long: 15 * 60,     // 15 minutes
+                sessionsPerRound: 4
+            };
+
+            // --- State Variables ---
+            let timerId = null;
+            let isRunning = false;
+            let currentMode = 'pomodoro';
+            let timeRemaining = settings.pomodoro;
+            let sessionCount = 0;
+
+            // --- Color Themes ---
+            const themes = {
+                pomodoro: {
+                    btn: 'bg-amber-600',
+                    text: 'text-amber-800' // Warmer text for light button
+                },
+                short: {
+                    btn: 'bg-teal-600',
+                    text: 'text-teal-800'
+                },
+                long: {
+                    btn: 'bg-indigo-500',
+                    text: 'text-indigo-800'
+                }
+            };
+
+            // --- Core Functions ---
+            
+            /**
+             * Formats time in seconds into MM:SS format and updates the display.
+             */
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+                const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+                const title = `${minutes}:${seconds} - ${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}`;
+                
+                timerDisplay.textContent = `${minutes}:${seconds}`;
+                floatingTimerDisplay.textContent = `${minutes}:${seconds}`; // <-- Update floating timer too
+                document.title = title;
+            }
+
+            /**
+             * Plays a notification sound using Tone.js.
+             */
+            function playSound() {
+                try {
+                    // Create a simple synth and play a note
+                    const synth = new Tone.Synth().toDestination();
+                    synth.triggerAttackRelease("C5", "8n", Tone.now());
+                    synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.2);
+                } catch (error) {
+                    console.error("Could not play sound:", error);
+                }
+            }
+
+            /**
+             * Switches the timer mode (pomodoro, short, long).
+             */
+            function switchMode(mode) {
+                currentMode = mode;
+                timeRemaining = settings[mode];
+                
+                // Pause any running timer
+                pauseTimer();
+
+                // Update UI elements
+                updateTimerDisplay();
+                updateTheme();
+            }
+
+            /**
+             * Updates the background and button colors based on the current mode.
+             */
+            function updateTheme() {
+                const theme = themes[currentMode];
+
+                // Remove old theme classes from body
+                bodyBg.classList.remove('bg-red-900', 'bg-blue-900', 'bg-green-900', 'bg-gray-900');
+                // We are using a background image, so we don't add the theme bg to the body
+
+                // Update active tab button
+                tabButtons.forEach(btn => {
+                    if (btn.dataset.mode === currentMode) {
+                        btn.classList.remove('text-gray-400');
+                        btn.classList.add('text-white', theme.btn);
+                    } else {
+                        // Make sure to remove all possible theme colors
+                        btn.classList.remove('text-white', 'bg-amber-600', 'bg-teal-600', 'bg-indigo-500', 'bg-red-500', 'bg-blue-500', 'bg-green-500');
+                        btn.classList.add('text-gray-400');
+                    }
+                });
+
+                // Update timer text color
+                timerDisplay.classList.remove('text-red-400', 'text-blue-400', 'text-green-400', 'text-white');
+                timerDisplay.classList.add('text-white'); // Keep it white for better contrast on dark bg
+                
+                // Update start button text color
+                startPauseBtn.classList.remove('text-red-900', 'text-blue-900', 'text-green-900', 'text-amber-800', 'text-teal-800', 'text-indigo-800');
+                // Update start button background color to match theme
+                startPauseBtn.classList.remove('bg-amber-600', 'bg-teal-600', 'bg-indigo-500', 'bg-white');
+                startPauseBtn.classList.add(theme.btn);
+                startPauseBtn.classList.add('text-white');
+                startPauseBtn.style.backgroundColor = ''; // Remove inline style
+            }
+
+            /**
+             * Starts the timer interval.
+             */
+            async function startTimer() {
+                // Initialize audio context on first user interaction
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                }
+
+                if (isRunning) return;
+
+                isRunning = true;
+                startPauseBtn.textContent = 'Pause';
+                
+                timerId = setInterval(() => {
+                    timeRemaining--;
+                    updateTimerDisplay();
+
+                    if (timeRemaining <= 0) {
+                        pauseTimer();
+                        playSound();
+                        nextSession();
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Pauses the timer interval.
+             */
+            function pauseTimer() {
+                clearInterval(timerId);
+                timerId = null;
+                isRunning = false;
+                startPauseBtn.textContent = 'Start';
+            }
+
+            /**
+             * Resets the timer to the current mode's default.
+             */
+            function resetTimer() {
+                pauseTimer();
+                timeRemaining = settings[currentMode];
+                updateTimerDisplay();
+            }
+
+            /**
+             * Moves to the next session in the Pomodoro cycle.
+             */
+            function nextSession() {
+                if (currentMode === 'pomodoro') {
+                    sessionCount++;
+                    updateSessionDots();
+
+                    if (sessionCount % settings.sessionsPerRound === 0) {
+                        switchMode('long');
+                    } else {
+                        switchMode('short');
+                    }
+                } else {
+                    // If finishing a break, always go back to pomodoro
+                    if (currentMode === 'long') {
+                        sessionCount = 0; // Reset session count after long break
+                        updateSessionDots();
+                    }
+                    switchMode('pomodoro');
+                }
+            }
+
+            /**
+             * Creates the initial session dots.
+             */
+            function createSessionDots() {
+                sessionDotsContainer.innerHTML = ''; // Clear existing
+                for (let i = 0; i < settings.sessionsPerRound; i++) {
+                    const dot = document.createElement('div');
+                    // Updated inactive dots to be warmer and more transparent
+                    dot.className = 'w-3 h-3 rounded-full bg-stone-500 opacity-50 transition-all duration-300';
+                    sessionDotsContainer.appendChild(dot);
+                }
+            }
+
+            /**
+             * Updates the session dots to reflect completed sessions.
+             */
+            function updateSessionDots() {
+                const themeBtnColor = themes[currentMode].btn;
+                const dots = sessionDotsContainer.children;
+                for (let i = 0; i < dots.length; i++) {
+                    // Clear all possible theme classes
+                    dots[i].classList.remove('bg-stone-500', 'opacity-50', 'opacity-100', 'bg-amber-600', 'bg-teal-600', 'bg-indigo-500');
+                    
+                    if (i < sessionCount) {
+                        // Add active theme color
+                        dots[i].classList.add(themeBtnColor, 'opacity-100');
+                    } else {
+                        // Add inactive state
+                        dots[i].classList.add('bg-stone-500', 'opacity-50');
+                    }
+                }
+            } // <-- FIX: Added missing closing brace
+
+
+            // --- Event Listeners ---
+            
+            // Tab buttons
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchMode(btn.dataset.mode);
+                });
+            });
+
+            // Start/Pause button
+            startPauseBtn.addEventListener('click', () => {
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            });
+
+            // Reset button
+            resetBtn.addEventListener('click', () => {
+                resetTimer();
+            });
+
+            // --- New Floating Timer Toggle Event ---
+            floatingTimerToggleBtn.addEventListener('click', () => {
+                floatingTimerWidget.classList.toggle('hidden');
+            });
+
+            // --- Updated Music Toggle Event ---
+            musicToggleBtn.addEventListener('click', () => {
+                spotifyWidget.classList.toggle('hidden');
+            });
+
+            // --- New Settings Modal Events ---
+            function openSettingsModal() {
+                // Populate inputs with current values (seconds to minutes)
+                pomodoroInput.value = settings.pomodoro / 60;
+                shortInput.value = settings.short / 60;
+                longInput.value = settings.long / 60;
+                // Show modal
+                settingsModal.classList.remove('hidden');
+            }
+
+            function closeSettingsModal() {
+                settingsModal.classList.add('hidden');
+            }
+
+            settingsBtn.addEventListener('click', openSettingsModal);
+            closeModalBtn.addEventListener('click', closeSettingsModal);
+            settingsBackdrop.addEventListener('click', closeSettingsModal);
+
+            saveSettingsBtn.addEventListener('click', () => {
+                // Get values and convert to numbers (and then to seconds)
+                const newPomodoro = parseInt(pomodoroInput.value, 10) * 60;
+                const newShort = parseInt(shortInput.value, 10) * 60;
+                const newLong = parseInt(longInput.value, 10) * 60;
+
+                // Basic validation
+                if (newPomodoro >= 60) settings.pomodoro = newPomodoro;
+                if (newShort >= 60) settings.short = newShort;
+                if (newLong >= 60) settings.long = newLong;
+
+                closeSettingsModal();
+
+                // If timer isn't running, update the current mode's time
+                if (!isRunning) {
+                    // Update the time for the *current* mode immediately
+                    timeRemaining = settings[currentMode];
+                    updateTimerDisplay();
+                }
+            });
+            
+            // --- New Reusable Draggable Window Function ---
+            function makeDraggable(widget, handle) {
+                let isDragging = false;
+                let offsetX, offsetY;
+
+                // variables for smooth dragging
+                let latestX = 0;
+                let latestY = 0;
+                let isUpdateScheduled = false;
+
+                function onMouseDown(e) {
+                    // If the click was on a button inside the handle, don't start dragging
+                    // if (e.target.closest('button')) { // <-- Removed this check
+                    //     return;
+                    // }
+                    isDragging = true;
+                    const rect = widget.getBoundingClientRect();
+                    offsetX = e.clientX - rect.left;
+                    offsetY = e.clientY - rect.top;
+                    latestX = e.clientX;
+                    latestY = e.clientY;
+                    handle.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    latestX = e.clientX;
+                    latestY = e.clientY;
+                    scheduleUpdate();
+                }
+
+                function onMouseUp() {
+                    isDragging = false;
+                    isUpdateScheduled = false;
+                    handle.style.cursor = 'move';
+                }
+
+                function onTouchStart(e) {
+                    // If the tap was on a button inside the handle, don't start dragging
+                    // if (e.target.closest('button')) { // <-- Removed this check
+                    //     return;
+                    // }
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    const rect = widget.getBoundingClientRect();
+                    offsetX = touch.clientX - rect.left;
+                    offsetY = touch.clientY - rect.top;
+                    latestX = touch.clientX;
+                    latestY = touch.clientY;
+                    handle.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+
+                function onTouchMove(e) {
+                    if (!isDragging) return;
+                    const touch = e.touches[0];
+                    latestX = touch.clientX;
+                    latestY = touch.clientY;
+                    scheduleUpdate();
+                    e.preventDefault(); // Prevent page scroll
+                }
+
+                function onTouchEnd() {
+                    isDragging = false;
+                    isUpdateScheduled = false;
+                    handle.style.cursor = 'move';
+                }
+
+CHORE: 
+                function scheduleUpdate() {
+                    if (!isUpdateScheduled) {
+                        isUpdateScheduled = true;
+                        requestAnimationFrame(updateWidgetPosition);
+                    }
+                }
+
+                function updateWidgetPosition() {
+                    if (!isDragging) {
+                        isUpdateScheduled = false;
+                        return;
+                    }
+
+                    let newX = latestX - offsetX;
+                    let newY = latestY - offsetY;
+
+                    // Constrain to viewport
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    const widgetWidth = widget.offsetWidth;
+                    const widgetHeight = widget.offsetHeight;
+
+                    if (newX < 0) newX = 0;
+                    if (newY < 0) newY = 0;
+                    if (newX + widgetWidth > viewportWidth) newX = viewportWidth - widgetWidth;
+                    if (newY + widgetHeight > viewportHeight) newY = viewportHeight - widgetHeight; // <-- FIX: was newY = newY
+                    
+                    widget.style.left = `${newX}px`;
+                    widget.style.top = `${newY}px`;
+                    widget.style.right = 'auto'; // Override initial 'right'
+                    widget.style.bottom = 'auto'; // Override any potential 'bottom'
+
+                    isUpdateScheduled = false;
+                }
+
+                // Attach Mouse Events
+                handle.addEventListener('mousedown', onMouseDown);
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+
+                // Attach Touch Events
+                handle.addEventListener('touchstart', onTouchStart, { passive: false });
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
+                document.addEventListener('touchend', onTouchEnd);
+            }
+
+
+            // --- Initialization ---
+            
+            // Make widgets draggable
+            makeDraggable(spotifyWidget, dragHandle);
+            makeDraggable(floatingTimerWidget, timerDragHandle);
+
+            createSessionDots();
+            switchMode('pomodoro'); // Initialize on pomodoro mode
+        });
+    </script>
+</body>
+</html>
